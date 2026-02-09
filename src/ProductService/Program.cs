@@ -5,7 +5,6 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using ProductService;
-using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
