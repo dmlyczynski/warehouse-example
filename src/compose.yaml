@@ -1,9 +1,9 @@
 ﻿services:
-  warehouse:
-    image: warehouse
+  inventoryservice:
+    image: inventoryservice
     build:
       context: .
-      dockerfile: Warehouse/Dockerfile
+      dockerfile: InventoryService/Dockerfile
 
   productservice:
     image: productservice
@@ -11,3 +11,15 @@
       context: .
       dockerfile: ProductService/Dockerfile
 
+  lgtm:
+    image: "grafana/otel-lgtm:latest"
+    platform: linux/amd64
+    ports:
+      - "3000:3000" # Grafana
+      - "4317:4317" # GRPC
+      - "4318:4318" # HTTP
+
+networks:
+  default:
+    name: lgtm-network
+    driver: bridge
