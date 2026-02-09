@@ -25,6 +25,15 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 
+var test = builder.Configuration["ProductService:BaseUrl"];
+
+builder.Services.AddHttpClient<IProductServiceClient, ProductServiceClient>(client =>
+{
+    var baseUrl = builder.Configuration["ProductService:BaseUrl"] ?? "http://localhost:5001";
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 builder.Logging.AddOpenTelemetry(logging =>
 {
     logging.IncludeFormattedMessage = true;
@@ -109,17 +118,15 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+    db.Database.EnsureCreated();
     db.Database.Migrate();
 }
 
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/openapi/v1.json", "Open API V");
-    });
-}
+    options.SwaggerEndpoint("/openapi/v1.json", "Open API V");
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

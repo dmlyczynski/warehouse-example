@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Primitives;
+
 namespace InventoryService.Endpoints;
 
 using System.Security.Claims;
@@ -30,14 +32,19 @@ public static class InventoryEndpoints
         IPublishEndpoint publishEndpoint,
         ILoggerFactory loggerFactory,
         ClaimsPrincipal user,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        HttpRequest requestAuth)
     {
         var logger = loggerFactory.CreateLogger("InventoryEndpoints");
 
         try
         {
-            // Validate ProductId exists
-            if (!await repository.ProductExistsAsync(request.ProductId, cancellationToken))
+            if (!requestAuth.Headers.TryGetValue("Authorization", out var authHeader))
+            {
+                return Results.BadRequest(new { error = "Authorization header missing" });
+            }
+            
+            if (!await repository.ProductExistsAsync(request.ProductId, GetAuthHeader(authHeader), cancellationToken))
             {
                 logger.LogWarning("Product {ProductId} does not exist", request.ProductId);
                 return Results.BadRequest(new { Error = "Product does not exist" });
@@ -85,6 +92,11 @@ public static class InventoryEndpoints
                 title: "Internal Server Error",
                 detail: "An error occurred while processing your request",
                 statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        string GetAuthHeader(StringValues authHeader)
+        {
+            return authHeader.ToString().Replace("Bearer", "");
         }
     }
 }

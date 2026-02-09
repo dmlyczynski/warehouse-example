@@ -23,7 +23,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-app.MapPost("/auth/token",
+app.MapGet("/auth/token",
         ([FromQuery] string role, JwtTokenService jwt) =>
         {
             role = string.IsNullOrWhiteSpace(role) ? "write" : role;

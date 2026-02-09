@@ -19,12 +19,17 @@ public class JwtTokenService
         var jwtSettings = _config.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, username),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
             new Claim("role", role)
         };
+
+        if (role == "write")
+        {
+            claims.Add(new Claim("role", "read"));
+        }
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(secretKey)

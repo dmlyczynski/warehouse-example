@@ -101,7 +101,7 @@ builder.Services.AddMassTransit(x =>
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.ListenAnyIP(8080);
+    serverOptions.ListenAnyIP(8081);
 });
 
 var app = builder.Build();
@@ -109,17 +109,15 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ProductDbContext>();
+    db.Database.EnsureCreated();
     db.Database.Migrate();
 }
 
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/openapi/v1.json", "Open API V");
-    });
-}
+    options.SwaggerEndpoint("/openapi/v1.json", "Open API V");
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

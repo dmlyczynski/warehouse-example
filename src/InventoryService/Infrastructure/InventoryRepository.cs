@@ -5,16 +5,18 @@ namespace InventoryService.Infrastructure;
 public interface IInventoryRepository
 {
     Task InsertAsync(Inventory inventory, CancellationToken cancellationToken = default);
-    Task<bool> ProductExistsAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<bool> ProductExistsAsync(Guid productId, string authHeader, CancellationToken cancellationToken = default);
 }
 
 public class InventoryRepository : IInventoryRepository
 {
+    private readonly IProductServiceClient _productServiceClient;
     private readonly InventoryDbContext _context;
 
-    public InventoryRepository(InventoryDbContext context)
+    public InventoryRepository(InventoryDbContext context, IProductServiceClient productServiceClient)
     {
         _context = context;
+        _productServiceClient = productServiceClient;
     }
 
     public async Task InsertAsync(Inventory inventory, CancellationToken cancellationToken = default)
@@ -23,10 +25,8 @@ public class InventoryRepository : IInventoryRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
     
-    public async Task<bool> ProductExistsAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<bool> ProductExistsAsync(Guid productId, string authHeader, CancellationToken cancellationToken = default)
     {
-        // For this example, we assume all products exist (cross-service validation could be done via HTTP or events)
-        // In real-world scenario, you might call ProductService API or have a local cache
-        return await Task.FromResult(true);
+        return await _productServiceClient.ProductExistsAsync(productId, authHeader, cancellationToken);
     }
 }
