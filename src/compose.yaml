@@ -1,0 +1,13 @@
+﻿services:
+  warehouse:
+    image: warehouse
+    build:
+      context: .
+      dockerfile: Warehouse/Dockerfile
+
+  productservice:
+    image: productservice
+    build:
+      context: .
+      dockerfile: ProductService/Dockerfile
+
