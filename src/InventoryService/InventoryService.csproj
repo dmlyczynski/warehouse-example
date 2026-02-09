@@ -28,4 +28,8 @@
         <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\IntegrationEvents\IntegrationEvents.csproj" />
+    </ItemGroup>
+
 </Project>

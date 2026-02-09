@@ -1,0 +1,90 @@
+namespace InventoryService.Endpoints;
+
+using System.Security.Claims;
+using IntegrationEvents;
+using Infrastructure;
+using Application;
+using Domain;
+using MassTransit;
+
+public static class InventoryEndpoints
+{
+    public static IEndpointRouteBuilder MapInventoryEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/inventory")
+            .RequireAuthorization();
+
+        group.MapPost("/", AddInventory)
+            .RequireAuthorization(policy => policy.RequireRole("write"))
+            .WithName("AddInventory")
+            .Produces<Inventory>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status500InternalServerError);
+
+        return app;
+    }
+
+    private static async Task<IResult> AddInventory(
+        AddInventoryRequest request,
+        IInventoryRepository repository,
+        IPublishEndpoint publishEndpoint,
+        ILoggerFactory loggerFactory,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken)
+    {
+        var logger = loggerFactory.CreateLogger("InventoryEndpoints");
+
+        try
+        {
+            // Validate ProductId exists
+            if (!await repository.ProductExistsAsync(request.ProductId, cancellationToken))
+            {
+                logger.LogWarning("Product {ProductId} does not exist", request.ProductId);
+                return Results.BadRequest(new { Error = "Product does not exist" });
+            }
+
+            var inventory = new Inventory
+            {
+                Id = Guid.NewGuid(),
+                ProductId = request.ProductId,
+                Quantity = request.Quantity,
+                AddedAt = DateTime.UtcNow,
+                AddedBy = user.Identity?.Name ?? "Unknown"
+            };
+
+            await repository.InsertAsync(inventory, cancellationToken);
+
+            logger.LogInformation(
+                "Inventory added: {InventoryId} for Product {ProductId} with Quantity {Quantity}",
+                inventory.Id, inventory.ProductId, inventory.Quantity);
+
+            var @event = new ProductInventoryAddedEvent
+            {
+                EventId = Guid.NewGuid(),
+                ProductId = inventory.ProductId,
+                Quantity = inventory.Quantity,
+                OccurredAt = inventory.AddedAt
+            };
+
+            await publishEndpoint.Publish(@event, cancellationToken);
+
+            logger.LogInformation(
+                "Published ProductInventoryAddedEvent: {EventId}",
+                @event.EventId);
+
+            return Results.Created($"/inventory/{inventory.Id}", inventory);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Error adding inventory for Product {ProductId}",
+                request.ProductId);
+
+            return Results.Problem(
+                title: "Internal Server Error",
+                detail: "An error occurred while processing your request",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+}
