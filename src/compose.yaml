@@ -1,7 +1,21 @@
 ﻿services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbitmq:
     image: masstransit/rabbitmq
-    container_name: rabbitmq
     restart: always
     ports:
       - 5672:5672
@@ -29,11 +43,15 @@
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Username=guest
       - RabbitMQ__Password=guest
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=InventoryDb;Username=postgres;Password=postgres
+      - ASPNETCORE_ENVIRONMENT=Development
     build:
       context: .
       dockerfile: InventoryService/Dockerfile
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   productservice:
@@ -45,11 +63,15 @@
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Username=guest
       - RabbitMQ__Password=guest
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=InventoryDb;Username=postgres;Password=postgres
+      - ASPNETCORE_ENVIRONMENT=Development
     build:
       context: .
       dockerfile: ProductService/Dockerfile
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   lgtm:
@@ -70,3 +92,4 @@ configs:
     content: "[rabbitmq_management]."  
 volumes:
   rabbitmq-data:
+  postgres-data:
