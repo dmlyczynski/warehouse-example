@@ -7,6 +7,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using ProductService;
+using ProductService.Consumers;
 using ProductService.Endpoints;
 using ProductService.Infrastructure;
 
@@ -87,6 +88,8 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<ProductInventoryAddedConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>

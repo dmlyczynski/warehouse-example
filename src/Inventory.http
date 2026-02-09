@@ -1,5 +1,5 @@
-@rootUrl=http://localhost:8081
-@authToken=xxx
+@rootUrl=http://localhost:8080
+@authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJUZXN0VXNlciIsInVuaXF1ZV9uYW1lIjoiVGVzdFVzZXIiLCJyb2xlIjpbIndyaXRlIiwicmVhZCJdLCJleHAiOjE3NzA2Nzg0MjAsImlzcyI6IldhcmVob3VzZSIsImF1ZCI6IldhcmVob3VzZSJ9.F6vcdy3cgYnOJNmGAsvCLR9sl3XJ3FTOmAFOuFAJifc
 
 POST {{rootUrl}}/inventory
 accept: application/json
@@ -7,6 +7,6 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-  "productId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "quantity": 1
+  "productId": "945a9430-9803-425e-93b3-24f42315b245",
+  "quantity": 40
 }
