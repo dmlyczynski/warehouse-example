@@ -45,6 +45,9 @@
       - RabbitMQ__Password=guest
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=InventoryDb;Username=postgres;Password=postgres
       - ASPNETCORE_ENVIRONMENT=Development
+      - JwtSettings__SecretKey=a-string-secret-at-least-256-bits-long
+      - JwtSettings__Issuer=Warehouse
+      - JwtSettings__Audience=Warehouse
     build:
       context: .
       dockerfile: InventoryService/Dockerfile
@@ -65,6 +68,9 @@
       - RabbitMQ__Password=guest
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=InventoryDb;Username=postgres;Password=postgres
       - ASPNETCORE_ENVIRONMENT=Development
+      - JwtSettings__SecretKey=a-string-secret-at-least-256-bits-long
+      - JwtSettings__Issuer=Warehouse
+      - JwtSettings__Audience=Warehouse
     build:
       context: .
       dockerfile: ProductService/Dockerfile
@@ -93,3 +99,9 @@ configs:
 volumes:
   rabbitmq-data:
   postgres-data:
+  testapp:
+    image: testapp
+    build:
+      context: .
+      dockerfile: TestApp/Dockerfile
+
