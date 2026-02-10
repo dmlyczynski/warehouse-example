@@ -42,8 +42,6 @@ public class WarehouseEndToEndTests
 
         _rabbitmqContainer = new RabbitMqBuilder()
             .WithImage("rabbitmq:3-management")
-            .WithUsername("guest")
-            .WithPassword("guest")
             .Build();
         await _rabbitmqContainer.StartAsync();
     }
@@ -85,8 +83,8 @@ public class WarehouseEndToEndTests
                         {
                             cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>
                             {
-                                h.Username("guest");
-                                h.Password("guest");
+                                h.Username(_rabbitmqContainer.GetConnectionString().Split(';')[1].Split('=')[1]);
+                                h.Password(_rabbitmqContainer.GetConnectionString().Split(';')[2].Split('=')[1]);
                             });
 
                             cfg.ConfigureEndpoints(context);
@@ -143,8 +141,8 @@ public class WarehouseEndToEndTests
                         {
                             cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>
                             {
-                                h.Username("guest");
-                                h.Password("guest");
+                                h.Username(_rabbitmqContainer.GetConnectionString().Split(';')[1].Split('=')[1]);
+                                h.Password(_rabbitmqContainer.GetConnectionString().Split(';')[2].Split('=')[1]);
                             });
 
                             cfg.ConfigureEndpoints(context);
