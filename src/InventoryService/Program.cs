@@ -32,6 +32,8 @@ builder.Services.AddHttpClient<IProductServiceClient, ProductServiceClient>(clie
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 builder.Logging.AddOpenTelemetry(logging =>
 {
     logging.IncludeFormattedMessage = true;
