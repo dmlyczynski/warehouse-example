@@ -32,14 +32,14 @@ public class ProductServiceFactory : WebApplicationFactory<global::Program>, IAs
     {
         var rabbitMqHost = _rabbitmqContainer.Hostname;
         var rabbitMqPort = _rabbitmqContainer.GetMappedPublicPort(5672);
-        
+
         builder.UseEnvironment("Integration");
-        
+
         builder.ConfigureServices(services =>
         {
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<ProductDbContext>));
-            
+
             if (descriptor != null)
             {
                 services.Remove(descriptor);
@@ -48,12 +48,12 @@ public class ProductServiceFactory : WebApplicationFactory<global::Program>, IAs
             services.AddDbContext<ProductDbContext>(options =>
             {
                 options.UseNpgsql(_postgresContainer.GetConnectionString());
-            });            
-            
+            });
+
             services.AddMassTransitTestHarness(x =>
             {
                 x.AddConsumer<ProductInventoryAddedConsumer>();
-                
+
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>

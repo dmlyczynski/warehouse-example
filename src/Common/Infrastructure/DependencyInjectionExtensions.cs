@@ -24,7 +24,7 @@ public static class DependencyInjectionExtensions
             services.AddMassTransit(x =>
             {
                 x.AddConsumer<TConsumer>();
-        
+
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     cfg.Host(configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
@@ -32,7 +32,7 @@ public static class DependencyInjectionExtensions
                         h.Username(configuration["RabbitMQ:Username"] ?? "guest");
                         h.Password(configuration["RabbitMQ:Password"] ?? "guest");
                     });
-        
+
                     cfg.ConfigureEndpoints(context);
                 });
             });
@@ -40,38 +40,38 @@ public static class DependencyInjectionExtensions
 
         return services;
     }
-    
-        public static IServiceCollection AddMassTransitConfiguration(
-            this IServiceCollection services,
-            IConfiguration configuration,
-            IHostEnvironment environment)
+
+    public static IServiceCollection AddMassTransitConfiguration(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment)
+    {
+        if (!environment.IsEnvironment("Integration"))
         {
-            if (!environment.IsEnvironment("Integration"))
+            services.AddMassTransit(x =>
             {
-                services.AddMassTransit(x =>
-                {            
-                    x.UsingRabbitMq((context, cfg) =>
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    cfg.Host(configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
                     {
-                        cfg.Host(configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
-                        {
-                            h.Username(configuration["RabbitMQ:Username"] ?? "guest");
-                            h.Password(configuration["RabbitMQ:Password"] ?? "guest");
-                        });
-            
-                        cfg.ConfigureEndpoints(context);
+                        h.Username(configuration["RabbitMQ:Username"] ?? "guest");
+                        h.Password(configuration["RabbitMQ:Password"] ?? "guest");
                     });
+
+                    cfg.ConfigureEndpoints(context);
                 });
-            }
-    
-            return services;
+            });
         }
-    
+
+        return services;
+    }
+
     public static IServiceCollection AddAuthenticationConfiguration(
         this IServiceCollection services,
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-    
+
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
 
@@ -96,7 +96,7 @@ public static class DependencyInjectionExtensions
 
         return services;
     }
-    
+
     public static IServiceCollection AddOpenTelemetryConfiguration(
         this IServiceCollection services, string serviceName)
     {

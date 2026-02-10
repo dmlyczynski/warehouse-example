@@ -14,7 +14,7 @@ public static class JwtTokenHelper
 
         var claims = new List<Claim> { new(ClaimTypes.Name, "TestUser") };
         claims.AddRange(roles.Select(x => new Claim(ClaimTypes.Role, x)).ToList());
-        
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
@@ -25,7 +25,7 @@ public static class JwtTokenHelper
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature)
         };
-        
+
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }

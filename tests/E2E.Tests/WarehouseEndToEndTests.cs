@@ -55,12 +55,12 @@ public class WarehouseEndToEndTests
         var connectionString = _postgresContainer.GetConnectionString();
         var rabbitMqHost = _rabbitmqContainer.Hostname;
         var rabbitMqPort = _rabbitmqContainer.GetMappedPublicPort(5672);
-        
+
         _productServiceFactory = new WebApplicationFactory<ProductService.Program>()
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Integration");
-                
+
                 builder.ConfigureServices(services =>
                 {
                     var descriptor = services.SingleOrDefault(
@@ -69,15 +69,15 @@ public class WarehouseEndToEndTests
                     {
                         services.Remove(descriptor);
                     }
-                    
+
                     services.AddDbContext<ProductDbContext>(options =>
                     {
                         options.UseNpgsql(connectionString);
                     });
-                    
+
                     var sp = services.BuildServiceProvider();
                     using var scope = sp.CreateScope();
-                    
+
                     services.AddMassTransit(x =>
                     {
                         x.AddConsumer<ProductInventoryAddedConsumer>();
@@ -100,12 +100,12 @@ public class WarehouseEndToEndTests
 
         _productClient = _productServiceFactory.CreateClient();
         _productServiceBaseUrl = "http://localhost:8081";
-        
+
         _inventoryServiceFactory = new WebApplicationFactory<InventoryService.Program>()
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Integration");
-                
+
                 builder.ConfigureServices(services =>
                 {
                     var descriptor = services.SingleOrDefault(
@@ -119,14 +119,14 @@ public class WarehouseEndToEndTests
                     {
                         options.UseNpgsql(connectionString);
                     });
-                    
+
                     var productDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IProductServiceClient));
                     if (productDescriptor != null)
                     {
                         services.Remove(productDescriptor);
                     }
-                    
+
                     services.AddSingleton<IProductServiceClient>(sp =>
                     {
                         var logger = sp.GetRequiredService<ILogger<ProductServiceClient>>();
@@ -137,7 +137,7 @@ public class WarehouseEndToEndTests
                     using var scope = sp.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
                     db.Database.EnsureCreated();
-                    
+
                     services.AddMassTransit(x =>
                     {
                         x.UsingRabbitMq((context, cfg) =>

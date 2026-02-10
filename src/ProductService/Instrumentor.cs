@@ -3,10 +3,10 @@ using System.Diagnostics.Metrics;
 
 namespace ProductService;
 
-public sealed class Instrumentor: IDisposable
+public sealed class Instrumentor : IDisposable
 {
     public const string ServiceName = "ProductService";
-    
+
     public ActivitySource Tracer { get; }
     public Meter Recorder { get; }
     public Counter<long> IncomingRequestCounter { get; }
@@ -19,7 +19,7 @@ public sealed class Instrumentor: IDisposable
         IncomingRequestCounter = Recorder.CreateCounter<long>("app.incoming.requests",
             description: "The number of incoming requests to the backend API");
     }
-    
+
     public void Dispose()
     {
         Tracer.Dispose();

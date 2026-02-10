@@ -44,7 +44,7 @@ public static class InventoryEndpoints
             {
                 return Results.BadRequest(new { error = "Authorization header missing" });
             }
-            
+
             var inventory = new Inventory
             {
                 Id = Guid.NewGuid(),
@@ -53,7 +53,7 @@ public static class InventoryEndpoints
                 AddedAt = DateTime.UtcNow,
                 AddedBy = user.Identity?.Name ?? "Unknown"
             };
-            
+
             var validator = new InventoryValidator();
             var result = await validator.ValidateAsync(inventory, cancellationToken);
 
@@ -63,10 +63,10 @@ public static class InventoryEndpoints
                 {
                     logger.LogError("Validation error: {propertyName}: {errorMessage}", error.PropertyName, error.ErrorMessage);
                 }
-                
+
                 return Results.BadRequest(new { Error = "Invalid inventory data" });
             }
-            
+
             if (!await repository.ProductExistsAsync(request.ProductId, GetAuthHeader(authHeader), cancellationToken))
             {
                 logger.LogWarning("Product {ProductId} does not exist", request.ProductId);

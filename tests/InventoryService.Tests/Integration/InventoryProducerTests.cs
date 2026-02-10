@@ -45,7 +45,7 @@ public class InventoryProducerTests : IClassFixture<InventoryServiceFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        
+
         // Verify message was published (simplified check)
         var harness = _factory.Services.GetRequiredService<ITestHarness>();
         (await harness.Published.Any<ProductInventoryAddedEvent>()).Should().BeTrue();

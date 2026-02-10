@@ -32,14 +32,14 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
     {
         var rabbitMqHost = _rabbitmqContainer.Hostname;
         var rabbitMqPort = _rabbitmqContainer.GetMappedPublicPort(5672);
-        
+
         builder.UseEnvironment("Integration");
-        
+
         builder.ConfigureServices(services =>
         {
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<InventoryDbContext>));
-            
+
             if (descriptor != null)
             {
                 services.Remove(descriptor);
@@ -49,16 +49,16 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
             {
                 options.UseNpgsql(_postgresContainer.GetConnectionString());
             });
-            
+
             var productDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(IProductServiceClient));
             if (productDescriptor != null)
             {
                 services.Remove(productDescriptor);
             }
-                    
+
             services.AddSingleton<IProductServiceClient>(sp => new MockProductServiceClient());
-            
+
             services.AddMassTransitTestHarness(x =>
             {
                 x.UsingRabbitMq((context, cfg) =>

@@ -34,7 +34,7 @@ public class ProductInventoryAddedConsumer : IConsumer<ProductInventoryAddedEven
                     message.EventId);
                 return;
             }
-            
+
             await _repository.UpdateProductAmountAsync(
                 message.ProductId,
                 message.Quantity,

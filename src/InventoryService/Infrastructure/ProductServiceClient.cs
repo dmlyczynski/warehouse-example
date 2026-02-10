@@ -29,13 +29,13 @@ public class ProductServiceClient : IProductServiceClient
             }
 
             var response = await _httpClient.GetAsync($"products/{productId}", cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("Product {ProductId} exists in ProductService", productId);
                 return true;
             }
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 _logger.LogWarning("Product {ProductId} not found in ProductService", productId);

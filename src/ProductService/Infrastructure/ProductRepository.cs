@@ -25,7 +25,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Products.AsNoTracking().FirstOrDefaultAsync(x=>x.Id == id, cancellationToken);
+        return await _context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
     public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ public class ProductRepository : IProductRepository
                 await transaction.RollbackAsync(cancellationToken);
                 return false;
             }
-            
+
             var updated = await _context.Products
                 .Where(x => x.Id == productId)
                 .ExecuteUpdateAsync(setters => setters
@@ -85,7 +85,7 @@ public class ProductRepository : IProductRepository
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
-        
+
         return true;
     }
 
@@ -94,7 +94,7 @@ public class ProductRepository : IProductRepository
         return await _context.ProcessedEvents.AsNoTracking()
             .AnyAsync(e => e.EventId == eventId, cancellationToken);
     }
-    
+
     public static bool IsUniqueViolation(DbUpdateException ex)
     {
         return ex.InnerException is PostgresException pgEx

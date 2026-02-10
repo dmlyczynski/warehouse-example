@@ -24,7 +24,7 @@ public class InventoryRepository : IInventoryRepository
         await _context.Inventories.AddAsync(inventory, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
-    
+
     public async Task<bool> ProductExistsAsync(Guid productId, string authHeader, CancellationToken cancellationToken = default)
     {
         return await _productServiceClient.ProductExistsAsync(productId, authHeader, cancellationToken);

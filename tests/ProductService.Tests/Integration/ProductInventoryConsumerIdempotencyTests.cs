@@ -30,7 +30,7 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
         var repository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
         var harness = scope.ServiceProvider.GetRequiredService<ITestHarness>();
         var consumerHarness = _factory.Services.GetRequiredService<IConsumerTestHarness<ProductInventoryAddedConsumer>>();
-        
+
         var productId = Guid.NewGuid();
         var product = new Product
         {
@@ -56,7 +56,7 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
             Quantity = quantity,
             OccurredAt = DateTime.UtcNow
         };
-        
+
         await harness.Start();
 
         try
@@ -64,7 +64,7 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
             // Act - Publish the same event twice
             await harness.Bus.Publish(@event);
             await harness.Bus.Publish(@event);
-            
+
             var sw = Stopwatch.StartNew();
             while (consumerHarness.Consumed.Select<ProductInventoryAddedEvent>().Count() == 2)
             {
@@ -72,10 +72,10 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
                 {
                     throw new TimeoutException("Not all messages were consumed");
                 }
-    
+
                 await Task.Delay(1000);
             }
-            
+
             await Task.Delay(2000);
 
             // Assert
@@ -83,12 +83,12 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
             var processedEvents = await dbContext.ProcessedEvents
                 .Where(e => e.EventId == eventId)
                 .ToListAsync();
-            
+
             using (new AssertionScope())
             {
                 updatedProduct.Should().NotBeNull();
                 updatedProduct!.Amount.Should().Be(10, "the product amount should be updated only once");
-                processedEvents.Should().ContainSingle("the event should be marked as processed only once");    
+                processedEvents.Should().ContainSingle("the event should be marked as processed only once");
             }
         }
         finally
@@ -106,7 +106,7 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
         var repository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
         var harness = scope.ServiceProvider.GetRequiredService<ITestHarness>();
         var consumerHarness = _factory.Services.GetRequiredService<IConsumerTestHarness<ProductInventoryAddedConsumer>>();
-        
+
         var productId = Guid.NewGuid();
         var product = new Product
         {
@@ -137,7 +137,7 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
             Quantity = 5,
             OccurredAt = DateTime.UtcNow
         };
-        
+
         await harness.Start();
 
         try
@@ -145,9 +145,9 @@ public class ProductInventoryConsumerIdempotencyTests : IClassFixture<ProductSer
             // Act - Publish two different events
             await harness.Bus.Publish(event1);
             await harness.Bus.Publish(event2);
-            
+
             await Task.Delay(10000);
-            
+
             // Assert
             var updatedProduct = await repository.GetByIdAsync(productId);
             var processedEvents = await dbContext.ProcessedEvents.ToListAsync();
