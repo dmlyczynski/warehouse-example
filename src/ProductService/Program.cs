@@ -1,5 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Common.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using ProductService;
+using ProductService.Consumers;
 using ProductService.Endpoints;
 using ProductService.Infrastructure;
 
@@ -18,6 +20,8 @@ builder.Services.AddDbContext<ProductDbContext>(options =>
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 builder.Logging.AddOpenTelemetry(logging =>
 {
     logging.IncludeFormattedMessage = true;
@@ -25,7 +29,7 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.ParseStateValues = true;
 });
 
-builder.Services.AddOpenTelemetryConfiguration();
+builder.Services.AddOpenTelemetryConfiguration(Instrumentor.ServiceName);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -38,7 +42,7 @@ builder.Services.AddAuthorization();
 // ToDo
 builder.Services.AddHealthChecks();
 
-builder.Services.AddMassTransitConfiguration(configuration, builder.Environment);
+builder.Services.AddMassTransitConfiguration<ProductInventoryAddedConsumer>(configuration, builder.Environment);
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {

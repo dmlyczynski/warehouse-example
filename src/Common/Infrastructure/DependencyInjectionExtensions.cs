@@ -1,26 +1,29 @@
 using System.Text;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using ProductService.Consumers;
 
-namespace ProductService;
+namespace Common.Infrastructure;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddMassTransitConfiguration(
+    public static IServiceCollection AddMassTransitConfiguration<TConsumer>(
         this IServiceCollection services,
         IConfiguration configuration,
         IHostEnvironment environment)
+        where TConsumer : class, IConsumer
     {
         if (!environment.IsEnvironment("Integration"))
         {
             services.AddMassTransit(x =>
             {
-                x.AddConsumer<ProductInventoryAddedConsumer>();
+                x.AddConsumer<TConsumer>();
         
                 x.UsingRabbitMq((context, cfg) =>
                 {
@@ -37,6 +40,31 @@ public static class DependencyInjectionExtensions
 
         return services;
     }
+    
+        public static IServiceCollection AddMassTransitConfiguration(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            IHostEnvironment environment)
+        {
+            if (!environment.IsEnvironment("Integration"))
+            {
+                services.AddMassTransit(x =>
+                {            
+                    x.UsingRabbitMq((context, cfg) =>
+                    {
+                        cfg.Host(configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
+                        {
+                            h.Username(configuration["RabbitMQ:Username"] ?? "guest");
+                            h.Password(configuration["RabbitMQ:Password"] ?? "guest");
+                        });
+            
+                        cfg.ConfigureEndpoints(context);
+                    });
+                });
+            }
+    
+            return services;
+        }
     
     public static IServiceCollection AddAuthenticationConfiguration(
         this IServiceCollection services,
@@ -70,13 +98,13 @@ public static class DependencyInjectionExtensions
     }
     
     public static IServiceCollection AddOpenTelemetryConfiguration(
-        this IServiceCollection services)
+        this IServiceCollection services, string serviceName)
     {
         services.AddOpenTelemetry()
-            .ConfigureResource(Helpers.ConfigureResource)
+            .ConfigureResource(x => Helpers.ConfigureResource(x, serviceName))
             .WithTracing(tracerProviderBuilder =>
                 tracerProviderBuilder
-                    .AddSource(Instrumentor.ServiceName)
+                    .AddSource(serviceName)
                     .AddAspNetCoreInstrumentation(opts =>
                     {
                         opts.Filter = context =>
@@ -88,7 +116,7 @@ public static class DependencyInjectionExtensions
                     .AddHttpClientInstrumentation())
             .WithMetrics(metricsProviderBuilder =>
                 metricsProviderBuilder
-                    .AddMeter(Instrumentor.ServiceName)
+                    .AddMeter(serviceName)
                     .AddRuntimeInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation())

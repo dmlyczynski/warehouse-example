@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Common.Infrastructure;
 using InventoryService;
 using InventoryService.Endpoints;
 using InventoryService.Infrastructure;
@@ -41,75 +42,18 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.ParseStateValues = true;
 });
 
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(Helpers.ConfigureResource)
-    .WithTracing(tracerProviderBuilder =>
-        tracerProviderBuilder
-            .AddSource(Instrumentor.ServiceName)
-            .AddAspNetCoreInstrumentation(opts =>
-            {
-                opts.Filter = context =>
-                {
-                    var ignore = new[] { "/swagger" };
-                    return !ignore.Any(s => context.Request.Path.ToString().Contains(s));
-                };
-            })
-            .AddHttpClientInstrumentation())
-    .WithMetrics(metricsProviderBuilder =>
-        metricsProviderBuilder
-            .AddMeter(Instrumentor.ServiceName)
-            .AddRuntimeInstrumentation()
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation())
-    .UseOtlpExporter();
-
+builder.Services.AddOpenTelemetryConfiguration(Instrumentor.ServiceName);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-    };
-});
-
+builder.Services.AddAuthenticationConfiguration(configuration, builder.Environment);
 builder.Services.AddAuthorization();
 
 // ToDo
 builder.Services.AddHealthChecks();
 
-if(!builder.Environment.IsEnvironment("Integration"))
-{
-    builder.Services.AddMassTransit(x =>
-    {
-        x.UsingRabbitMq((context, cfg) =>
-        {
-            cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
-            {
-                h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
-                h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
-            });
-
-            cfg.ConfigureEndpoints(context);
-        });
-    });
-}
+builder.Services.AddMassTransitConfiguration(configuration, builder.Environment);
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
