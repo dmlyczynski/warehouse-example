@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using InventoryService.Infrastructure;
+using InventoryService.Tests.Helpers;
+using Microsoft.Extensions.Logging;
+using ProductService.Consumers;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
@@ -13,6 +16,7 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
 {
     private readonly PostgreSqlContainer _postgresContainer;
     private readonly RabbitMqContainer _rabbitmqContainer;
+    private const string RabbitMqNameKey = "guest";
 
     public InventoryServiceFactory()
     {
@@ -20,11 +24,17 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
             .Build();
 
         _rabbitmqContainer = new RabbitMqBuilder()
+            .WithImage("rabbitmq:3-management")
+            .WithUsername(RabbitMqNameKey)
+            .WithPassword(RabbitMqNameKey)
             .Build();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        var rabbitMqHost = _rabbitmqContainer.Hostname;
+        var rabbitMqPort = _rabbitmqContainer.GetMappedPublicPort(5672);
+        
         builder.UseEnvironment("Integration");
         
         builder.ConfigureServices(services =>
@@ -41,16 +51,27 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
             {
                 options.UseNpgsql(_postgresContainer.GetConnectionString());
             });
-
-            services.AddMassTransit(x =>
+            
+            var productDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IProductServiceClient));
+            if (productDescriptor != null)
+            {
+                services.Remove(productDescriptor);
+            }
+                    
+            services.AddSingleton<IProductServiceClient>(sp => new MockProductServiceClient());
+            
+            services.AddMassTransitTestHarness(x =>
             {
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(_rabbitmqContainer.Hostname, _rabbitmqContainer.GetMappedPublicPort(5672), "/", h =>
+                    cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>
                     {
-                        h.Username(_rabbitmqContainer.GetConnectionString().Split(';')[1].Split('=')[1]);
-                        h.Password(_rabbitmqContainer.GetConnectionString().Split(';')[2].Split('=')[1]);
+                        h.Username(RabbitMqNameKey);
+                        h.Password(RabbitMqNameKey);
                     });
+
+                    cfg.ConfigureEndpoints(context);
                 });
             });
         });

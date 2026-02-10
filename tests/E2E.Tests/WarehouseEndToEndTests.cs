@@ -31,6 +31,7 @@ public class WarehouseEndToEndTests
     private HttpClient _inventoryClient = null!;
     private HttpClient _productClient = null!;
     private string _productServiceBaseUrl = null!;
+    private const string RabbitMqNameKey = "guest";
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
@@ -42,6 +43,8 @@ public class WarehouseEndToEndTests
 
         _rabbitmqContainer = new RabbitMqBuilder()
             .WithImage("rabbitmq:3-management")
+            .WithUsername(RabbitMqNameKey)
+            .WithPassword(RabbitMqNameKey)
             .Build();
         await _rabbitmqContainer.StartAsync();
     }
@@ -83,8 +86,8 @@ public class WarehouseEndToEndTests
                         {
                             cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>
                             {
-                                h.Username(_rabbitmqContainer.GetConnectionString().Split(';')[1].Split('=')[1]);
-                                h.Password(_rabbitmqContainer.GetConnectionString().Split(';')[2].Split('=')[1]);
+                                h.Username(RabbitMqNameKey);
+                                h.Password(RabbitMqNameKey);
                             });
 
                             cfg.ConfigureEndpoints(context);
@@ -117,11 +120,11 @@ public class WarehouseEndToEndTests
                         options.UseNpgsql(connectionString);
                     });
                     
-                    var descriptor1 = services.SingleOrDefault(
+                    var productDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IProductServiceClient));
-                    if (descriptor1 != null)
+                    if (productDescriptor != null)
                     {
-                        services.Remove(descriptor1);
+                        services.Remove(productDescriptor);
                     }
                     
                     services.AddSingleton<IProductServiceClient>(sp =>
@@ -141,8 +144,8 @@ public class WarehouseEndToEndTests
                         {
                             cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>
                             {
-                                h.Username(_rabbitmqContainer.GetConnectionString().Split(';')[1].Split('=')[1]);
-                                h.Password(_rabbitmqContainer.GetConnectionString().Split(';')[2].Split('=')[1]);
+                                h.Username("guest");
+                                h.Password("guest");
                             });
 
                             cfg.ConfigureEndpoints(context);
