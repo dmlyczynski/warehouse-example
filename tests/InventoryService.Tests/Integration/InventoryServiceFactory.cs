@@ -53,12 +53,6 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
                     });
                 });
             });
-            
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var scopedServices = scope.ServiceProvider;
-            var db = scopedServices.GetRequiredService<InventoryDbContext>();
-            db.Database.EnsureCreated();
         });
     }
 
