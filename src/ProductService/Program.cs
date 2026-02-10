@@ -86,21 +86,25 @@ builder.Services.AddAuthorization();
 // ToDo
 builder.Services.AddHealthChecks();
 
-builder.Services.AddMassTransit(x =>
+
+if (!builder.Environment.IsEnvironment("Integration"))
 {
-    x.AddConsumer<ProductInventoryAddedConsumer>();
-
-    x.UsingRabbitMq((context, cfg) =>
+    builder.Services.AddMassTransit(x =>
     {
-        cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
-        {
-            h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
-            h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
-        });
+        x.AddConsumer<ProductInventoryAddedConsumer>();
 
-        cfg.ConfigureEndpoints(context);
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
+            {
+                h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
+                h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
+            });
+
+            cfg.ConfigureEndpoints(context);
+        });
     });
-});
+}
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
@@ -112,7 +116,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ProductDbContext>();
-    db.Database.EnsureCreated();
     db.Database.Migrate();
 }
 
@@ -130,3 +133,9 @@ app.MapHealthChecks("/health");
 app.MapProductEndpoints();
 
 app.Run();
+
+namespace ProductService
+{
+    public partial class Program
+    { }
+}
