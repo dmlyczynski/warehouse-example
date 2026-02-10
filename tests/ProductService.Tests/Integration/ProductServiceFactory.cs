@@ -3,20 +3,20 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using InventoryService.Infrastructure;
-using InventoryService.Tests.Helpers;
+using ProductService.Consumers;
+using ProductService.Infrastructure;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
-namespace InventoryService.Tests.Integration;
+namespace ProductService.Tests;
 
-public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class ProductServiceFactory : WebApplicationFactory<global::Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgresContainer;
     private readonly RabbitMqContainer _rabbitmqContainer;
     private const string RabbitMqNameKey = "guest";
 
-    public InventoryServiceFactory()
+    public ProductServiceFactory()
     {
         _postgresContainer = new PostgreSqlBuilder()
             .Build();
@@ -38,29 +38,22 @@ public class InventoryServiceFactory : WebApplicationFactory<Program>, IAsyncLif
         builder.ConfigureServices(services =>
         {
             var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<InventoryDbContext>));
+                d => d.ServiceType == typeof(DbContextOptions<ProductDbContext>));
             
             if (descriptor != null)
             {
                 services.Remove(descriptor);
             }
 
-            services.AddDbContext<InventoryDbContext>(options =>
+            services.AddDbContext<ProductDbContext>(options =>
             {
                 options.UseNpgsql(_postgresContainer.GetConnectionString());
-            });
-            
-            var productDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(IProductServiceClient));
-            if (productDescriptor != null)
-            {
-                services.Remove(productDescriptor);
-            }
-                    
-            services.AddSingleton<IProductServiceClient>(sp => new MockProductServiceClient());
+            });            
             
             services.AddMassTransitTestHarness(x =>
             {
+                x.AddConsumer<ProductInventoryAddedConsumer>();
+                
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     cfg.Host(rabbitMqHost, rabbitMqPort, "/", h =>

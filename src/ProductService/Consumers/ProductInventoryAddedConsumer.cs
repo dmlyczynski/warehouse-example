@@ -50,7 +50,6 @@ public class ProductInventoryAddedConsumer : IConsumer<ProductInventoryAddedEven
                 ex,
                 "Error processing ProductInventoryAddedEvent: {EventId}",
                 message.EventId);
-            throw;
         }
     }
 }
