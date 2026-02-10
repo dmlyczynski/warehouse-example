@@ -48,6 +48,7 @@
       - JwtSettings__SecretKey=a-string-secret-at-least-256-bits-long
       - JwtSettings__Issuer=Warehouse
       - JwtSettings__Audience=Warehouse
+      - ProductService__BaseUrl=http://productservice:8081
     build:
       context: .
       dockerfile: InventoryService/Dockerfile
@@ -60,7 +61,7 @@
   productservice:
     image: productservice
     ports:
-      - "5002:8080"
+      - "5002:8081"
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://lgtm:4317
       - RabbitMQ__Host=rabbitmq

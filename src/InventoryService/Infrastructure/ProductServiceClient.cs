@@ -28,7 +28,7 @@ public class ProductServiceClient : IProductServiceClient
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             }
 
-            var response = await _httpClient.GetAsync($"Products/{productId}", cancellationToken);
+            var response = await _httpClient.GetAsync($"products/{productId}", cancellationToken);
             
             if (response.IsSuccessStatusCode)
             {
